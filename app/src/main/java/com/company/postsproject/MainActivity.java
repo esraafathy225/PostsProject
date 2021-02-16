@@ -20,6 +20,12 @@ import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     String link="https://pastebin.com/raw/wgkJgazE";
@@ -47,6 +53,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
+                Retrofit retrofit= new Retrofit.Builder().baseUrl("https://pastebin.com/raw/")
+                        .addConverterFactory(GsonConverterFactory.create()).build();
+
+                RetrofitService retrofitService=retrofit.create(RetrofitService.class);
+
+                retrofitService.getPosts().enqueue(new Callback<ArrayList<UserData>>() {
+                    @Override
+                    public void onResponse(Call<ArrayList<UserData>> call, Response<ArrayList<UserData>> response) {
+
+                        PostAdapter postAdapter=new PostAdapter(MainActivity.this,response.body());
+                        recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                        recyclerView.setAdapter(postAdapter);
+
+                    }
+
+                    @Override
+                    public void onFailure(Call<ArrayList<UserData>> call, Throwable t) {
+
+                    }
+                });
+
             }
         });
 
@@ -63,9 +90,15 @@ public class MainActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                         try {
+
                             urlConnection= (HttpURLConnection) url.openConnection();
                             urlConnection.setRequestMethod("GET");
+                            urlConnection.setReadTimeout(15000);
+
+
                             inputStream=urlConnection.getInputStream();
+
+
                             int c=0;
                             StringBuffer buffer=new StringBuffer();
                             int responseCode = urlConnection.getResponseCode();
